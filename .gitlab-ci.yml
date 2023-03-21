@@ -1,0 +1,55 @@
+pages:
+  stage: deploy
+  environment: production
+  script:
+    - mkdir .public
+    - cp -r ./* .public
+    - rm -rf public
+    - mv .public public
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+  ###
+# stages:
+#   - deploy
+  
+# deploy_job:
+#     stage: deploy
+#     before_script:
+#     - chmod 400 $PEMFILE
+#     script:
+#         - ssh -o StrictHostKeyChecking=no -i $PEMFILE ec2-user@3.109.182.63 "
+#             sudo rm -rf /var/www/html/* cleaning-services-website-static-website/ &&
+#             sudo git clone https://gitlab.com/SaiKrishnareddy_12345/cleaning-services-website-static-website.git &&
+#             sudo cp -r cleaning-services-website-static-website/* /var/www/html/" 
+docker-build-develop:
+  image: docker:18-git
+  stage: build
+  services: 
+    - docker:18-dind
+  script: 
+    - docker login $registry -u Saikrishnareddy_12345 -p $gitlab_password
+    - apk update && apk upgrade
+    - apk add curl
+    - docker build --rm -t registry.gitlab.com/SaiKrishnareddy_12345/static_html:develop --build-arg SERVER_RELEASE_VERSION=$CI_COMMIT_SHORT_SHA .
+    - docker push registry.gitlab.com/SaiKrishnareddy_12345/static_html:develop
+  only: 
+    - develop
+
+docker-build-main:
+  image: docker:18-git
+  stage: build
+  services: 
+    - docker:18-dind
+  script: 
+    - docker login $registry -u Saikrishnareddy_12345 -p $gitlab_password
+    - apk update && apk upgrade
+    - apk add curl
+    - docker build --rm -t registry.gitlab.com/SaiKrishnareddy_12345/static_html:main --build-arg SERVER_RELEASE_VERSION=$CI_COMMIT_SHORT_SHA .
+    - docker push registry.gitlab.com/SaiKrishnareddy_12345/static_html:main
+  only: 
+    - main
+
